@@ -19,8 +19,11 @@ of labels, and 5 most recent times to run image classification on & off device
 
 ### Topic Justification
 
--
--
--
--
--
+This app will leverage deep learning performed on the device as well as on a server. As the task of 
+integrating deep learning into an application becomes easier, the next logical step is to make it 
+more efficient and consume less resources to perform. Our application will allow a user to see metrics
+captured during the deep learning process such as image classification accuracy and time to perform
+the classification. We will be presenting this data in graphical form to inform the user about metrics
+that can be improved upon, and this also allows the user to get relatively instant feedback about the 
+average performance of these metrics to have a visual representation of what can be improved upon 
+in regards to running machine learning in an application.

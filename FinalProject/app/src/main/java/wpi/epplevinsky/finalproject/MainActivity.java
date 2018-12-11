@@ -13,6 +13,8 @@ import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -45,7 +47,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private static Integer REQUEST_IMAGE_CAPTURE = 5;
     private String mCurrentPhotoPath;
-    private String mTempPhotoName;
+
     // Start: Variables for inference
     Bitmap image;
     long startTime;
@@ -74,13 +76,32 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
     }
+    ////////////////////////////////////////////////////////////////////////////////////
+    // Code for Menu Starts Here
+    ////////////////////////////////////////////////////////////////////////////////////
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.home_item) {
+            startActivity(new Intent(MainActivity.this, MainActivity.class));
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    // Code for Menu ends here
+
+    ////////////////////////////////////////////////////////////////////////////////////
+    // Code for Taking Picture Starts Here
+    ////////////////////////////////////////////////////////////////////////////////////
     public void onTakePictureButton(View v) {
         File tempFileDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File tempFile = new File("./");
         try {
             tempFile = File.createTempFile("pic", ".jpg", tempFileDir);
-            mTempPhotoName = tempFile.getName();
             mCurrentPhotoPath = tempFile.getAbsolutePath();
         } catch (IOException e) {
             e.printStackTrace();
@@ -94,7 +115,6 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
         }
     }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == this.REQUEST_IMAGE_CAPTURE) {
@@ -104,9 +124,10 @@ public class MainActivity extends AppCompatActivity {
             mPictureView.setImageBitmap(BitmapFactory.decodeFile(mCurrentPhotoPath));
         }
     }
+    // Code for taking picture ends
 
     /////////////////////////////////////////////////////////////////////////////////
-    // ML Code
+    // Running ML inference code
     /////////////////////////////////////////////////////////////////////////////////
     private void runML(Bitmap bitmap) {
 
@@ -169,10 +190,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void convertBitmapToByteBuffer(Bitmap bitmap) {
         int[] intValues = new int[SIZE_X * SIZE_Y];
+        if (imgData == null) { return; }
 
-        if (imgData == null) {
-            return;
-        }
         imgData.rewind();
         bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
         // Convert the image to floating point.
@@ -221,7 +240,6 @@ public class MainActivity extends AppCompatActivity {
                 highestIndex = i;
             }
         }
-
         float highestProb = tempHigh * 100;
         String highestProbStr = String.format("%.2f", highestProb);
 
@@ -229,9 +247,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClickButtonGo(View view) {
-
         new RunInferenceAsyncOnDevice().execute(mCurrentPhotoPath);
-
     }
 
     ////////////////////////////////////
@@ -249,8 +265,6 @@ public class MainActivity extends AppCompatActivity {
 
         protected Long doInBackground(String... img_files) {
             filename = img_files[0];
-
-
             mBitmap = BitmapFactory.decodeFile(filename);
             mBitmap = Bitmap.createScaledBitmap(mBitmap, 299, 299, false);
             image = mBitmap;
@@ -259,11 +273,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         protected void onPostExecute(Long result){
+            // Stuff to do after inference ends
             endTime = SystemClock.uptimeMillis();
             long latency = endTime-time;
-            // Stuff to do after inference ends
-            TextView labelView = (TextView) findViewById(R.id.labelText);
 
+            TextView labelView = (TextView) findViewById(R.id.labelText);
             labelView.setText(mostAccurateLabel + " " + latency + "ms");
         }
     }
@@ -272,8 +286,6 @@ public class MainActivity extends AppCompatActivity {
     // Running Inference off device code
     ////////////////////////////////////////
     public void runOffDevice(View view) throws IOException {
-        String assetImage = mTempPhotoName;
-
         new RunInferenceAsync().execute(mCurrentPhotoPath);
     }
 

@@ -121,7 +121,11 @@ public class MainActivity extends AppCompatActivity {
             ImageView mPictureView = (ImageView) findViewById(R.id.pictureView);
             TextView mLabelView = (TextView) findViewById(R.id.labelText);
 
-            mPictureView.setImageBitmap(BitmapFactory.decodeFile(mCurrentPhotoPath));
+            Bitmap mBitmap = BitmapFactory.decodeFile(mCurrentPhotoPath);
+            Bitmap scaledBitMap = Bitmap.createScaledBitmap(mBitmap, 800, 800, false);
+            image = scaledBitMap;
+
+            mPictureView.setImageBitmap(image);
         }
     }
     // Code for taking picture ends

@@ -17,11 +17,19 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.squareup.okhttp.MediaType;
+import com.squareup.okhttp.MultipartBuilder;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
+
 import org.tensorflow.lite.Interpreter;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -37,7 +45,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private static Integer REQUEST_IMAGE_CAPTURE = 5;
     private String mCurrentPhotoPath;
-
+    private String mTempPhotoName;
     // Start: Variables for inference
     Bitmap image;
     long startTime;
@@ -58,6 +66,9 @@ public class MainActivity extends AppCompatActivity {
     private String mostAccurateLabel;
     // End: Variables for inference
 
+    private String hosturl = "http://35.243.243.163:54321/inception";
+    private MediaType MEDIA_TYPE_JPEG = MediaType.parse("image/jpeg; charset=utf-8");
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
         File tempFile = new File("./");
         try {
             tempFile = File.createTempFile("pic", ".jpg", tempFileDir);
+            mTempPhotoName = tempFile.getName();
             mCurrentPhotoPath = tempFile.getAbsolutePath();
         } catch (IOException e) {
             e.printStackTrace();
@@ -253,6 +265,64 @@ public class MainActivity extends AppCompatActivity {
             TextView labelView = (TextView) findViewById(R.id.labelText);
 
             labelView.setText(mostAccurateLabel + " " + latency + "ms");
+        }
+    }
+
+    ////////////////////////////////////////
+    // Running Inference off device code
+    ////////////////////////////////////////
+    public void runOffDevice(View view) throws IOException {
+        String assetImage = mTempPhotoName;
+
+        new RunInferenceAsync().execute(mCurrentPhotoPath);
+    }
+
+    private class RunInferenceAsync extends AsyncTask<String, Float, Long> {
+        String results;
+        long time;
+        String filename;
+
+        protected void onPreExecute() {
+            // Stuff to do before inference starts
+            time = SystemClock.uptimeMillis();
+        }
+
+        protected Long doInBackground(String... img_files) {
+            filename = img_files[0];
+            // Do inference here!
+            File file = new File(filename);
+
+            RequestBody requestBody = new MultipartBuilder()
+                    .type(MultipartBuilder.FORM)
+                    .addFormDataPart("file", filename, RequestBody.create(MEDIA_TYPE_JPEG, file))
+                    .build();
+
+            Request request = new Request.Builder()
+                    .url(hosturl)
+                    .post(requestBody)
+                    .build();
+
+            OkHttpClient client = new OkHttpClient();
+            long code = 0;
+
+            try {
+                Response response = client.newCall(request).execute();
+                results = response.body().string();
+                code = (long) response.code();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return code;
+        }
+
+        protected void onPostExecute(Long result){
+            // Stuff to do after inference ends
+            endTime = SystemClock.uptimeMillis();
+            long latency = endTime-time;
+
+            TextView labelView = (TextView) findViewById(R.id.labelText);
+            labelView.setText(results + " " + latency + "ms");
         }
     }
 }

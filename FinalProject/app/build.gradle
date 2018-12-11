@@ -31,4 +31,5 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     compile 'org.tensorflow:tensorflow-lite:+'
     compile 'com.github.lecho:hellocharts-library:1.5.8@aar'
+    implementation 'com.squareup.okhttp:okhttp:2.5.0'
 }

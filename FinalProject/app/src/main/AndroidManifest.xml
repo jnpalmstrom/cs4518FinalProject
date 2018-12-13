@@ -29,6 +29,8 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/filepaths"></meta-data>
         </provider>
+        <activity android:name=".OnDevicePerformanceActivity" />
+        <activity android:name=".OffDevicePerformanceActivity" />
     </application>
 
 </manifest>

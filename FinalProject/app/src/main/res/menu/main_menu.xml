@@ -7,5 +7,13 @@
         android:title="@string/home"
         app:showAsAction="never">
     </item>
+    <item android:id="@+id/on_device_performance_item"
+        android:title="@string/on_device_performance"
+        app:showAsAction="never">
+    </item>
+    <item android:id="@+id/off_device_performance_item"
+        android:title="@string/off_device_performance"
+        app:showAsAction="never">
+    </item>
 
 </menu>

@@ -1,6 +1,7 @@
 package wpi.epplevinsky.finalproject;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ResolveInfo;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
@@ -31,18 +32,15 @@ import org.tensorflow.lite.Interpreter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private static Integer REQUEST_IMAGE_CAPTURE = 5;
@@ -66,6 +64,11 @@ public class MainActivity extends AppCompatActivity {
     private List<String> labelList;
     private float[][] labelProbArray = null;
     private String mostAccurateLabel;
+
+    public static final String ON_SHARED_PREFS_FILE = "OnDeviceInferenceFile";
+    public static final String OFF_SHARED_PREFS_FILE = "OffDeviceInferenceFile";
+    private static int onDeviceInferenceNum = 1;
+    private static int offDeviceInferenceNum = 1;
     // End: Variables for inference
 
     private String hosturl = "http://35.243.243.163:54321/inception";
@@ -75,6 +78,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Map<String, ?> onMap = getSharedPreferences(ON_SHARED_PREFS_FILE, MODE_PRIVATE).getAll();
+        onDeviceInferenceNum = onMap.size() + 1;
+
+        Map<String, ?> offMap = getSharedPreferences(OFF_SHARED_PREFS_FILE, MODE_PRIVATE).getAll();
+        offDeviceInferenceNum = offMap.size() + 1;
     }
     ////////////////////////////////////////////////////////////////////////////////////
     // Code for Menu Starts Here
@@ -87,8 +96,18 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+
         if (item.getItemId() == R.id.home_item) {
+            // Go to Take Picture Activity
             startActivity(new Intent(MainActivity.this, MainActivity.class));
+        }
+        else if (item.getItemId() == R.id.on_device_performance_item) {
+            // Go to Gallery Activity
+            startActivity(new Intent(MainActivity.this, OnDevicePerformanceActivity.class));
+        }
+        else if (item.getItemId() == R.id.off_device_performance_item) {
+            // Go to Gallery Activity
+            startActivity(new Intent(MainActivity.this, OffDevicePerformanceActivity.class));
         }
         return super.onOptionsItemSelected(item);
     }
@@ -281,6 +300,11 @@ public class MainActivity extends AppCompatActivity {
             endTime = SystemClock.uptimeMillis();
             long latency = endTime-time;
 
+            SharedPreferences.Editor editor = getSharedPreferences(ON_SHARED_PREFS_FILE, MODE_PRIVATE).edit();
+            editor.putLong("inference" + onDeviceInferenceNum, latency);
+            editor.apply();
+            onDeviceInferenceNum++;
+
             TextView labelView = (TextView) findViewById(R.id.labelText);
             labelView.setText(mostAccurateLabel + " " + latency + "ms");
         }
@@ -336,6 +360,11 @@ public class MainActivity extends AppCompatActivity {
             // Stuff to do after inference ends
             endTime = SystemClock.uptimeMillis();
             long latency = endTime-time;
+
+            SharedPreferences.Editor editor = getSharedPreferences(OFF_SHARED_PREFS_FILE, MODE_PRIVATE).edit();
+            editor.putLong("inference" + offDeviceInferenceNum, latency);
+            editor.apply();
+            offDeviceInferenceNum++;
 
             TextView labelView = (TextView) findViewById(R.id.labelText);
             labelView.setText(results + " " + latency + "ms");
